@@ -2,7 +2,7 @@
 
 *Access Control List management for Dokku.*
 
-This fork of [dokku-acl](https://github.com/dokku-community/dokku-acl) removes the restriction to only anage acl app and service access over ssh.
+This fork of [dokku-acl](https://github.com/dokku-community/dokku-acl) removes the restriction to only manage acl app and service access over ssh.
 
 This plugin adds the ability to restrict dokku commands and push privileges
 for apps to certain users, with the goal of allowing secure multi-tenant dokku
