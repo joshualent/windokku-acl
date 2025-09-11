@@ -72,10 +72,6 @@ fn-acl-check-app() {
   declare APP="$1"
 
   verify_app_name "$APP"
-
-  if [[ -n "${NAME:-}" ]]; then
-    dokku_log_fail "You can only modify ACL using local dokku command on target host"
-  fi
 }
 
 fn-acl-check-service() {
@@ -84,10 +80,6 @@ fn-acl-check-service() {
   local SERVICE_PATH="$DOKKU_LIB_ROOT/services/$SERVICE_TYPE/$SERVICE"
   if ! [[ -d $SERVICE_PATH ]]; then
     dokku_log_fail "Service $SERVICE of type $SERVICE_TYPE does not exist"
-  fi
-
-  if [[ -n "${NAME:-}" ]]; then
-    dokku_log_fail "You can only modify ACL using local dokku command on target host"
   fi
 }
 
