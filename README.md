@@ -2,7 +2,9 @@
 
 *Access Control List management for Dokku.*
 
-This fork of [dokku-acl](https://github.com/dokku-community/dokku-acl) removes the restriction to only manage acl app and service access over ssh.
+This fork of [dokku-acl](https://github.com/dokku-community/dokku-acl) automatically adds users to apps or services when they create them. It also removes dokku-acl restrictions on managing acl over ssh and not locally on the target host. Auto acl for services has only been tested with postgres so far. More tests are on the way.
+
+The intended use case of the package is to add a user with a new ssh-key, give the private key to the user, and then let the user create and manage their own apps without interfering with global settings or the other users' projects. The rest of the flow is the same as dokku-acl, as this is a minimally adjusted fork. Make sure to define your settings in a `/home/dokku/.dokkurc/acl` file for definning allowed user commands in general, based on owned apps, based on owned services, and based on both owned app and service.
 
 This plugin adds the ability to restrict dokku commands and push privileges
 for apps to certain users, with the goal of allowing secure multi-tenant dokku
@@ -158,3 +160,8 @@ This will also prevent users from reading from app repos when they aren't in
 the ACL, which is desireable for security. While apps _should_ be configured
 using the environment, app developers often include secrets in their repos,
 especially with closed source projects.
+
+## todo
+- complete more tests on app and service creation (and document these findings)
+- remove unnecesary developer loging on service creation after tests have been completed and logging on app creation
+- create a utility for managing users, specifically getting users their private-ssh keys
