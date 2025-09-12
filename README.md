@@ -21,7 +21,7 @@ hosting. (See below for notes and limitations.)
 ## installation
 
 ```shell
-dokku plugin:install https://github.com/joshualent/dokku-acl.git acl
+dokku plugin:install https://github.com/joshualent/windokku-acl.git acl
 ```
 
 ## commands
