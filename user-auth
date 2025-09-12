@@ -24,6 +24,26 @@ shift 2
 
 CMD=$1
 
+# Capture creator identity for app/service creation so post-create hooks can attribute ownership
+# Harmless if the command later fails; post-create hooks will clean up any marker files.
+RUN_BASE="/var/run/dokku-acl-auto"
+case "$CMD" in
+  apps:create)
+    if [[ -n "$2" && -n "$SSH_NAME" ]]; then
+      mkdir -p "$RUN_BASE/apps"
+      printf "%s" "$SSH_NAME" > "$RUN_BASE/apps/$2" || true
+    fi
+    ;;
+  *:create)
+    # Matches service creation like redis:create mystore
+    if [[ -n "$2" && -n "$SSH_NAME" ]]; then
+      svc_type="${CMD%%:*}"
+      mkdir -p "$RUN_BASE/services/$svc_type"
+      printf "%s" "$SSH_NAME" > "$RUN_BASE/services/$svc_type/$2" || true
+    fi
+    ;;
+esac
+
 for allowed in $DOKKU_ACL_USER_COMMANDS; do
   [[ "$CMD" == "$allowed" ]] && exit 0
 done
