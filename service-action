@@ -4,7 +4,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 # service-action trigger
 # Invoked by service plugins like dokku-postgres as:
 #   plugn trigger service-action <phase> <service_type> <service>
-# We care about the "post-create" (and optionally "post-create-complete") phases.
+# We care only about the "post-create" phase to avoid duplicate runs.
 
 PHASE="$1"
 SERVICE_TYPE="$2"
@@ -13,7 +13,7 @@ SERVICE="$3"
 [[ -z "$PHASE" || -z "$SERVICE_TYPE" || -z "$SERVICE" ]] && exit 0
 
 case "$PHASE" in
-  post-create|post-create-complete)
+  post-create)
     # Resolve user from capture file or fallback to SSH_NAME
     RUN_BASE="/var/run/dokku-acl-auto"
     CREATOR_FILE="$RUN_BASE/services/$SERVICE_TYPE/$SERVICE"
@@ -29,8 +29,33 @@ case "$PHASE" in
       exit 0
     fi
 
+    echo "acl(service-action): phase=$PHASE type=$SERVICE_TYPE service=$SERVICE user=$user" >&2
+
+    # Helper to run a candidate command and treat exit 0/2 and 'already has permissions' as success
+    run_add_service() {
+      set +e
+      local desc="$1"; shift
+      echo "acl(service-action): trying [$desc]: $*" >&2
+      local out
+      out="$($@ 2>&1)"
+      local status=$?
+      # mirror command output for debugging
+      [[ -n "$out" ]] && echo "$out" >&2
+      set -e
+      if [[ $status -eq 0 ]]; then
+        echo "acl(service-action): success (status=$status)" >&2
+        return 0
+      fi
+      if [[ $status -eq 2 ]] || echo "$out" | grep -qi "already has permissions"; then
+        echo "acl(service-action): already present (status=$status)" >&2
+        return 0
+      fi
+      echo "acl(service-action): failure (status=$status)" >&2
+      return $status
+    }
+
     # Try to run as on-host admin: scrub ssh env and set DOKKU_ON_HOST
-    if env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 dokku acl:add-service "$SERVICE_TYPE" "$SERVICE" "$user" 2>/dev/null; then
+    if run_add_service "dokku acl:add-service" env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 dokku acl:add-service "$SERVICE_TYPE" "$SERVICE" "$user"; then
       exit 0
     fi
 
@@ -41,7 +66,7 @@ case "$PHASE" in
       for name in "${names[@]}"; do
         candidate="$base/$name/subcommands/add-service"
         if [[ -x "$candidate" ]]; then
-          if env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 "$candidate" "$SERVICE_TYPE" "$SERVICE" "$user"; then
+          if run_add_service "direct subcommand $candidate" env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 "$candidate" "$SERVICE_TYPE" "$SERVICE" "$user"; then
             exit 0
           fi
         fi
@@ -54,12 +79,12 @@ case "$PHASE" in
       admin_name=$(grep -m1 -o 'NAME=[^ ]*' /home/dokku/.ssh/authorized_keys | head -n1 | cut -d= -f2 || true)
     fi
     if [[ -n "$admin_name" ]]; then
-      if env SSH_NAME="$admin_name" SSH_USER="root" DOKKU_ON_HOST=1 dokku acl:add-service "$SERVICE_TYPE" "$SERVICE" "$user" 2>/dev/null; then
+      if run_add_service "dokku acl:add-service as admin_name=$admin_name" env SSH_NAME="$admin_name" SSH_USER="root" DOKKU_ON_HOST=1 dokku acl:add-service "$SERVICE_TYPE" "$SERVICE" "$user"; then
         exit 0
       fi
     fi
 
-    echo "WARN: failed to add '$user' to ACL for ${SERVICE_TYPE} service '$SERVICE'" >&2
+    echo "WARN: failed to add '$user' to ACL for ${SERVICE_TYPE} service '$SERVICE' after all attempts" >&2
     ;;
   *)
     # Ignore other phases
