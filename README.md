@@ -162,6 +162,6 @@ using the environment, app developers often include secrets in their repos,
 especially with closed source projects.
 
 ## todo
-- complete more tests on app and service creation (and document these findings)
+- add `apps` and `services` subcommands for users to list their own apps and services (which will essentially run `acl:allowed myusername` on the users behalf)
+- complete more manual tests on app and service creation (and document these findings)
 - remove unnecesary developer loging on service creation after tests have been completed and logging on app creation
-- create a utility for managing users, specifically getting users their private-ssh keys
