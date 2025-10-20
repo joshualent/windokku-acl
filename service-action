@@ -29,28 +29,21 @@ case "$PHASE" in
       exit 0
     fi
 
-    echo "acl(service-action): phase=$PHASE type=$SERVICE_TYPE service=$SERVICE user=$user" >&2
-
     # Helper to run a candidate command and treat exit 0/2 and 'already has permissions' as success
     run_add_service() {
       set +e
-      local desc="$1"; shift
-      echo "acl(service-action): trying [$desc]: $*" >&2
+  shift
       local out
       out="$($@ 2>&1)"
       local status=$?
-      # mirror command output for debugging
-      [[ -n "$out" ]] && echo "$out" >&2
       set -e
       if [[ $status -eq 0 ]]; then
-        echo "acl(service-action): success (status=$status)" >&2
         return 0
       fi
       if [[ $status -eq 2 ]] || echo "$out" | grep -qi "already has permissions"; then
-        echo "acl(service-action): already present (status=$status)" >&2
         return 0
       fi
-      echo "acl(service-action): failure (status=$status)" >&2
+      [[ -n "$out" ]] && echo "$out" >&2
       return $status
     }
 
