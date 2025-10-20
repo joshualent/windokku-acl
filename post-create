@@ -26,18 +26,18 @@ if env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 dokku acl:add "
 fi
 
 # Fallback: call the subcommand directly if found (disabled for testing)
-# bases=("$PLUGIN_ENABLED_PATH" "$PLUGIN_AVAILABLE_PATH" "/var/lib/dokku/plugins/enabled" "/var/lib/dokku/plugins/available")
-# names=("acl" "dokku-acl")
-# for base in "${bases[@]}"; do
-#   for name in "${names[@]}"; do
-#     candidate="${base}/${name}/subcommands/add"
-#     if [[ -x "$candidate" ]]; then
-#       if env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 "$candidate" "$APP" "$user"; then
-#         exit 0
-#       fi
-#     fi
-#   done
-# done
+bases=("$PLUGIN_ENABLED_PATH" "$PLUGIN_AVAILABLE_PATH" "/var/lib/dokku/plugins/enabled" "/var/lib/dokku/plugins/available")
+names=("acl" "dokku-acl")
+for base in "${bases[@]}"; do
+  for name in "${names[@]}"; do
+    candidate="${base}/${name}/subcommands/add"
+    if [[ -x "$candidate" ]]; then
+      if env -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 "$candidate" "$APP" "$user"; then
+        exit 0
+      fi
+    fi
+  done
+done
 
 # Last resort: try with an admin NAME inferred from authorized_keys (disabled for testing)
 # admin_name=""
