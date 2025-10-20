@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_DIR="$(dirname "$SCRIPT_DIR")"
+source "$PLUGIN_DIR/config"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_BASE_PATH/common/functions"
+source "$PLUGIN_DIR/internal-functions"
+
+cmd-acl-apps() {
+  #E list apps available to the authenticated user
+  #E dokku $PLUGIN_COMMAND_PREFIX:apps
+  declare desc="list apps the invoking user has access to"
+  local cmd="$PLUGIN_COMMAND_PREFIX:apps" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+
+  if [[ $# -gt 0 ]]; then
+    dokku_log_fail "This command does not take any arguments"
+  fi
+
+  local username=""
+  if [[ -n "${NAME:-}" ]]; then
+    username="$NAME"
+  elif [[ -n "${SSH_NAME:-}" ]]; then
+    username="$SSH_NAME"
+  elif [[ -n "${DOKKU_SSH_USER:-}" ]]; then
+    username="$DOKKU_SSH_USER"
+  else
+    username="$(id -un 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$username" ]]; then
+    dokku_log_fail "Unable to determine invoking username"
+  fi
+
+  env -u NAME -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 dokku "$PLUGIN_COMMAND_PREFIX:allowed" "$username"
+}
+
+cmd-acl-apps "$@"

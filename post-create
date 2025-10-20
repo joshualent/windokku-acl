@@ -5,6 +5,8 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 APP="$1"
 [[ -z "$APP" ]] && exit 0
 
+#? NOTE: only the last fallback method for adding user to acl
+
 # Resolve user from capture file or fallback to SSH_NAME
 RUN_BASE="/var/run/dokku-acl-auto"
 CREATOR_FILE="$RUN_BASE/apps/$APP"
