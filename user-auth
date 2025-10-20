@@ -24,6 +24,11 @@ shift 2
 
 CMD=$1
 
+# Allow acl:apps so users can list their own apps without requiring admin configuration
+if [[ "$CMD" == "$PLUGIN_COMMAND_PREFIX:apps" ]]; then
+  exit 0
+fi
+
 # Capture creator identity for app/service creation so post-create hooks can attribute ownership
 # Harmless if the command later fails; post-create hooks will clean up any marker files.
 RUN_BASE="/var/run/dokku-acl-auto"
