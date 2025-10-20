@@ -33,6 +33,17 @@ cmd-acl-apps() {
     dokku_log_fail "Unable to determine invoking username"
   fi
 
+  local admin_name=""
+  if [[ -r "/home/dokku/.ssh/authorized_keys" ]]; then
+    admin_name=$(grep -m1 -o 'NAME=[^ ]*' /home/dokku/.ssh/authorized_keys | head -n1 | cut -d= -f2 || true)
+  fi
+
+  if [[ -n "$admin_name" ]]; then
+    if env SSH_NAME="$admin_name" SSH_USER="root" DOKKU_ON_HOST=1 dokku "$PLUGIN_COMMAND_PREFIX:allowed" "$username"; then
+      return 0
+    fi
+  fi
+
   local allowed_cmd="$SCRIPT_DIR/allowed"
   if [[ ! -x "$allowed_cmd" ]]; then
     dokku_log_fail "acl:allowed command is not available"
