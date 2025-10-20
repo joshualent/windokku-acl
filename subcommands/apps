@@ -19,10 +19,10 @@ cmd-acl-apps() {
   fi
 
   local username=""
-  if [[ -n "${NAME:-}" ]]; then
-    username="$NAME"
-  elif [[ -n "${SSH_NAME:-}" ]]; then
+  if [[ -n "${SSH_NAME:-}" ]]; then
     username="$SSH_NAME"
+  elif [[ -n "${NAME:-}" && "$NAME" != "default" ]]; then
+    username="$NAME"
   elif [[ -n "${DOKKU_SSH_USER:-}" ]]; then
     username="$DOKKU_SSH_USER"
   else
@@ -33,7 +33,12 @@ cmd-acl-apps() {
     dokku_log_fail "Unable to determine invoking username"
   fi
 
-  env -u NAME -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 dokku "$PLUGIN_COMMAND_PREFIX:allowed" "$username"
+  local allowed_cmd="$SCRIPT_DIR/allowed"
+  if [[ ! -x "$allowed_cmd" ]]; then
+    dokku_log_fail "acl:allowed command is not available"
+  fi
+
+  env -u NAME -u SSH_NAME -u SSH_USER -u DOKKU_SSH_USER DOKKU_ON_HOST=1 "$allowed_cmd" "$PLUGIN_COMMAND_PREFIX:allowed" "$username"
 }
 
 cmd-acl-apps "$@"
