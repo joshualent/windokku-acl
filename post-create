@@ -40,15 +40,15 @@ for base in "${bases[@]}"; do
 done
 
 # Last resort: try with an admin NAME inferred from authorized_keys (disabled for testing)
-# admin_name=""
-# if [[ -r "/home/dokku/.ssh/authorized_keys" ]]; then
-#   admin_name=$(grep -m1 -o 'NAME=[^ ]*' /home/dokku/.ssh/authorized_keys | head -n1 | cut -d= -f2 || true)
-# fi
-# if [[ -n "$admin_name" ]]; then
-#   if env SSH_NAME="$admin_name" SSH_USER="root" DOKKU_ON_HOST=1 dokku acl:add "$APP" "$user" 2>/dev/null; then
-#     exit 0
-#   fi
-# fi
+admin_name=""
+if [[ -r "/home/dokku/.ssh/authorized_keys" ]]; then
+  admin_name=$(grep -m1 -o 'NAME=[^ ]*' /home/dokku/.ssh/authorized_keys | head -n1 | cut -d= -f2 || true)
+fi
+if [[ -n "$admin_name" ]]; then
+  if env SSH_NAME="$admin_name" SSH_USER="root" DOKKU_ON_HOST=1 dokku acl:add "$APP" "$user" 2>/dev/null; then
+    exit 0
+  fi
+fi
 
 echo "WARN: failed to add '$user' to ACL for app '$APP'" >&2
 exit 0
